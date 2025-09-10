@@ -4,11 +4,14 @@ import com.banking.cdeh_msa_bp_banking_application.exception.BadRequestException
 import com.banking.cdeh_msa_bp_banking_application.exception.ResourceNotFoundException;
 import com.banking.cdeh_msa_bp_banking_application.helper.ValidationHelper;
 import com.banking.cdeh_msa_bp_banking_application.repository.AccountRepository;
+import com.banking.cdeh_msa_bp_banking_application.repository.CustomerRepository;
 import com.banking.cdeh_msa_bp_banking_application.service.AccountService;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.AccountRequestDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.AccountResponseDto;
 import com.banking.cdeh_msa_bp_banking_application.util.LogMessages;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -21,14 +24,17 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class AccountServiceImpl implements AccountService {
 
-    private final AccountRepository accountRepository;
+    AccountRepository accountRepository;
+    CustomerRepository customerRepository;
 
     @Override
     public Mono<AccountResponseDto> createAccount(AccountRequestDto accountRequestDto) {
-        return validateAccountRequest(accountRequestDto)
+        return ValidationHelper.validateAccountRequest(accountRequestDto)
                 .then(accountRepository.createAccount(accountRequestDto))
+                .flatMap(this::mapCustomerName)
                 .doFirst(() -> log.info(LogMessages.ACCOUNT_CREATE_START, accountRequestDto.getCustomerId()))
                 .doOnSuccess(response -> log.info(LogMessages.ACCOUNT_CREATE_SUCCESS, response.getAccountId()))
                 .doOnError(error -> log.error(LogMessages.ACCOUNT_CREATE_ERROR, error.getMessage()))
@@ -44,6 +50,7 @@ public class AccountServiceImpl implements AccountService {
     public Mono<AccountResponseDto> getAccountById(UUID accountId) {
         return ValidationHelper.validateAccountId(accountId)
                 .then(accountRepository.getAccountById(accountId))
+                .flatMap(this::mapCustomerName)
                 .doFirst(() -> log.info(LogMessages.ACCOUNT_GET_BY_ID_START, accountId))
                 .doOnSuccess(response -> log.info(LogMessages.ACCOUNT_GET_BY_ID_SUCCESS, response.getAccountNumber()))
                 .doOnError(error -> log.error(LogMessages.ACCOUNT_GET_BY_ID_ERROR, accountId, error.getMessage()))
@@ -57,6 +64,7 @@ public class AccountServiceImpl implements AccountService {
     public Mono<AccountResponseDto> getAccountByNumber(String accountNumber) {
         return ValidationHelper.validateAccountNumber(accountNumber)
                 .then(accountRepository.getAccountByNumber(accountNumber))
+                .flatMap(this::mapCustomerName)
                 .doFirst(() -> log.info(LogMessages.ACCOUNT_GET_BY_NUMBER_START, accountNumber))
                 .doOnSuccess(response -> log.info(LogMessages.ACCOUNT_GET_BY_NUMBER_SUCCESS, response.getAccountId()))
                 .doOnError(error -> log.error(LogMessages.ACCOUNT_GET_BY_NUMBER_ERROR, accountNumber, error.getMessage()))
@@ -69,6 +77,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public Flux<AccountResponseDto> getAllAccounts() {
         return accountRepository.getAllAccounts()
+                .flatMap(this::mapCustomerName)
                 .doFirst(() -> log.info(LogMessages.ACCOUNT_GET_ALL_START))
                 .doOnComplete(() -> log.info(LogMessages.ACCOUNT_GET_ALL_SUCCESS))
                 .doOnError(error -> log.error(LogMessages.ACCOUNT_GET_ALL_ERROR, error.getMessage()));
@@ -78,6 +87,7 @@ public class AccountServiceImpl implements AccountService {
     public Flux<AccountResponseDto> getAccountsByCustomerId(UUID customerId) {
         return ValidationHelper.validateCustomerId(customerId)
                 .thenMany(accountRepository.getAccountsByCustomerId(customerId))
+                .flatMap(this::mapCustomerName)
                 .doFirst(() -> log.info(LogMessages.ACCOUNT_GET_BY_CUSTOMER_START, customerId))
                 .doOnComplete(() -> log.info(LogMessages.ACCOUNT_GET_BY_CUSTOMER_SUCCESS, customerId))
                 .doOnError(error -> log.error(LogMessages.ACCOUNT_GET_BY_CUSTOMER_ERROR, customerId, error.getMessage()))
@@ -88,8 +98,9 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public Mono<AccountResponseDto> updateAccount(UUID accountId, AccountRequestDto accountRequestDto) {
         return ValidationHelper.validateAccountId(accountId)
-                .then(validateAccountRequest(accountRequestDto))
+                .then(ValidationHelper.validateAccountRequest(accountRequestDto))
                 .then(accountRepository.updateAccount(accountId, accountRequestDto))
+                .flatMap(this::mapCustomerName)
                 .doFirst(() -> log.info(LogMessages.ACCOUNT_UPDATE_START, accountId))
                 .doOnSuccess(response -> log.info(LogMessages.ACCOUNT_UPDATE_SUCCESS, response.getAccountId()))
                 .doOnError(error -> log.error(LogMessages.ACCOUNT_UPDATE_ERROR, accountId, error.getMessage()))
@@ -106,6 +117,7 @@ public class AccountServiceImpl implements AccountService {
         return ValidationHelper.validateAccountId(accountId)
                 .then(ValidationHelper.validateAmountNotNegative(balance))
                 .then(accountRepository.updateAccountBalance(accountId, balance))
+                .flatMap(this::mapCustomerName)
                 .doFirst(() -> log.info(LogMessages.ACCOUNT_UPDATE_BALANCE_START, accountId, balance))
                 .doOnSuccess(response -> log.info(LogMessages.ACCOUNT_UPDATE_BALANCE_SUCCESS, response.getAccountId()))
                 .doOnError(error -> log.error(LogMessages.ACCOUNT_UPDATE_BALANCE_ERROR, accountId, error.getMessage()))
@@ -130,17 +142,12 @@ public class AccountServiceImpl implements AccountService {
                         ex -> Mono.error(new ResourceNotFoundException("Account not found with ID: " + accountId)));
     }
 
-    private Mono<Void> validateAccountRequest(AccountRequestDto accountRequestDto) {
-        return Mono.fromRunnable(() -> {
-            if (accountRequestDto == null) {
-                throw new IllegalArgumentException("Account request cannot be null");
-            }
-            if (accountRequestDto.getCustomerId() == null) {
-                throw new IllegalArgumentException("Customer ID is required");
-            }
-            if (accountRequestDto.getAccountType() == null || accountRequestDto.getAccountType().trim().isEmpty()) {
-                throw new IllegalArgumentException("Account type is required");
-            }
-        });
+    private Mono<AccountResponseDto> mapCustomerName(AccountResponseDto accountResponse) {
+        return customerRepository.getCustomerById(accountResponse.getCustomerId())
+                .map(customer -> {
+                    accountResponse.setCustomerName(customer.getParty().getName());
+                    return accountResponse;
+                })
+                .onErrorReturn(accountResponse);
     }
 }

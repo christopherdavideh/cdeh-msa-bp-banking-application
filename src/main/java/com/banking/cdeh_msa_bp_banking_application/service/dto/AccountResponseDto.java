@@ -20,4 +20,5 @@ public class AccountResponseDto {
     private BigDecimal initialBalance;
     private Boolean accountStatus;
     private UUID customerId;
+    private String customerName;
 }

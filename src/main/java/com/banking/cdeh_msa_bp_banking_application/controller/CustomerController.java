@@ -4,7 +4,9 @@ import com.banking.cdeh_msa_bp_banking_application.service.CustomerService;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.CustomerRequestDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.CustomerResponseDto;
 import jakarta.validation.Valid;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +18,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/clientes")
 @RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class CustomerController {
 
-    private final CustomerService customerService;
+    CustomerService customerService;
 
     @PostMapping
     public Mono<ResponseEntity<CustomerResponseDto>> createCustomer(

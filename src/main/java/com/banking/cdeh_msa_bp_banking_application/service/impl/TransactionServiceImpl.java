@@ -3,13 +3,18 @@ package com.banking.cdeh_msa_bp_banking_application.service.impl;
 import com.banking.cdeh_msa_bp_banking_application.exception.BadRequestException;
 import com.banking.cdeh_msa_bp_banking_application.exception.ResourceNotFoundException;
 import com.banking.cdeh_msa_bp_banking_application.helper.ValidationHelper;
+import com.banking.cdeh_msa_bp_banking_application.repository.AccountRepository;
+import com.banking.cdeh_msa_bp_banking_application.repository.CustomerRepository;
 import com.banking.cdeh_msa_bp_banking_application.repository.TransactionRepository;
 import com.banking.cdeh_msa_bp_banking_application.service.TransactionService;
+import com.banking.cdeh_msa_bp_banking_application.service.dto.AccountResponseDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionCreateRequestDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionResponseDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionUpdateRequestDto;
 import com.banking.cdeh_msa_bp_banking_application.util.LogMessages;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -22,14 +27,18 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class TransactionServiceImpl implements TransactionService {
 
-    private final TransactionRepository transactionRepository;
+    TransactionRepository transactionRepository;
+    CustomerRepository customerRepository;
+    AccountRepository accountRepository;
 
     @Override
     public Mono<TransactionResponseDto> createTransaction(TransactionCreateRequestDto transactionCreateRequestDto) {
         return ValidationHelper.validateTransactionCreateRequest(transactionCreateRequestDto)
                 .then(transactionRepository.createTransaction(transactionCreateRequestDto))
+                .flatMap(this::mapAdditionalData)
                 .doFirst(() -> log.info(LogMessages.TRANSACTION_CREATE_START,
                         transactionCreateRequestDto.getCustomerId(),
                         transactionCreateRequestDto.getSourceAccount()))
@@ -48,6 +57,7 @@ public class TransactionServiceImpl implements TransactionService {
     public Mono<TransactionResponseDto> getTransactionById(UUID transactionId) {
         return ValidationHelper.validateTransactionId(transactionId)
                 .then(transactionRepository.getTransactionById(transactionId))
+                .flatMap(this::mapAdditionalData)
                 .doFirst(() -> log.info(LogMessages.TRANSACTION_GET_BY_ID_START, transactionId))
                 .doOnSuccess(response -> log.info(LogMessages.TRANSACTION_GET_BY_ID_SUCCESS,
                         response.getTransactionId()))
@@ -63,6 +73,7 @@ public class TransactionServiceImpl implements TransactionService {
         return ValidationHelper.validateTransactionId(transactionId)
                 .then(ValidationHelper.validateTransactionUpdateRequest(transactionUpdateRequestDto))
                 .then(transactionRepository.updateTransaction(transactionId, transactionUpdateRequestDto))
+                .flatMap(this::mapAdditionalData)
                 .doFirst(() -> log.info(LogMessages.TRANSACTION_UPDATE_START, transactionId))
                 .doOnSuccess(response -> log.info(LogMessages.TRANSACTION_UPDATE_SUCCESS,
                         response.getTransactionId()))
@@ -94,6 +105,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .then(ValidationHelper.validateAccountNumber(accountNumber))
                 .then(ValidationHelper.validateDateRange(startDate, endDate))
                 .thenMany(transactionRepository.getTransactionsByCustomerIdAndAccountId(customerId, accountNumber, startDate, endDate))
+                .flatMap(this::mapAdditionalData)
                 .doFirst(() -> log.info(LogMessages.TRANSACTION_GET_BY_CUSTOMER_ACCOUNT_START,
                         customerId, accountNumber, startDate, endDate))
                 .doOnComplete(() -> log.info(LogMessages.TRANSACTION_GET_BY_CUSTOMER_ACCOUNT_SUCCESS,
@@ -107,8 +119,26 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Flux<TransactionResponseDto> getAllActiveTransactions() {
         return transactionRepository.getAllActiveTransactions()
+                .flatMap(this::mapAdditionalData)
                 .doFirst(() -> log.info(LogMessages.TRANSACTION_GET_ALL_ACTIVE_START))
                 .doOnComplete(() -> log.info(LogMessages.TRANSACTION_GET_ALL_ACTIVE_SUCCESS))
                 .doOnError(error -> log.error(LogMessages.TRANSACTION_GET_ALL_ACTIVE_ERROR, error.getMessage()));
+    }
+
+    private Mono<TransactionResponseDto> mapAdditionalData(TransactionResponseDto transactionResponse) {
+        Mono<String> customerNameMono = customerRepository.getCustomerById(transactionResponse.getCustomerId())
+                .map(customer -> customer.getParty().getName())
+                .onErrorReturn("Unknown Customer");
+
+        Mono<String> accountTypeMono = accountRepository.getAccountByNumber(transactionResponse.getSourceAccount())
+                .map(AccountResponseDto::getAccountType)
+                .onErrorReturn("Unknown Account Type");
+
+        return Mono.zip(customerNameMono, accountTypeMono)
+                .map(tuple -> {
+                    transactionResponse.setCustomerName(tuple.getT1());
+                    transactionResponse.setAccountType(tuple.getT2());
+                    return transactionResponse;
+                });
     }
 }

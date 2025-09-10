@@ -8,7 +8,9 @@ import com.banking.cdeh_msa_bp_banking_application.service.CustomerService;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.CustomerRequestDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.CustomerResponseDto;
 import com.banking.cdeh_msa_bp_banking_application.util.LogMessages;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -20,9 +22,10 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class CustomerServiceImpl implements CustomerService {
 
-    private final CustomerRepository customerRepository;
+    CustomerRepository customerRepository;
 
     @Override
     public Mono<CustomerResponseDto> createCustomer(CustomerRequestDto customerRequestDto) {

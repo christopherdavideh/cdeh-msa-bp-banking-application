@@ -5,7 +5,9 @@ import com.banking.cdeh_msa_bp_banking_application.repository.TransactionReposit
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionCreateRequestDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionResponseDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionUpdateRequestDto;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,10 +20,11 @@ import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class TransactionRepositoryImpl implements TransactionRepository {
 
-    private final WebClient webClient;
-    private final ApplicationProperties applicationProperties;
+    WebClient webClient;
+    ApplicationProperties applicationProperties;
 
     @Override
     public Mono<TransactionResponseDto> createTransaction(TransactionCreateRequestDto transactionCreateRequestDto) {

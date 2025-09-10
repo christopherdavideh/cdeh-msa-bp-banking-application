@@ -5,7 +5,9 @@ import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionCreate
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionResponseDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionUpdateRequestDto;
 import jakarta.validation.Valid;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +21,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/movimientos")
 @RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class TransactionController {
 
-    private final TransactionService transactionService;
+    TransactionService transactionService;
 
     @PostMapping
     public Mono<ResponseEntity<TransactionResponseDto>> createTransaction(

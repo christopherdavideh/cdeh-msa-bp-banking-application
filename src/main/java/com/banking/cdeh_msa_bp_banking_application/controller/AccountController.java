@@ -5,7 +5,9 @@ import com.banking.cdeh_msa_bp_banking_application.service.dto.AccountRequestDto
 import com.banking.cdeh_msa_bp_banking_application.service.dto.AccountResponseDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.UpdateBalanceDto;
 import jakarta.validation.Valid;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +19,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/cuentas")
 @RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class AccountController {
 
-    private final AccountService accountService;
+    AccountService accountService;
 
     @PostMapping
     public Mono<ResponseEntity<AccountResponseDto>> createAccount(

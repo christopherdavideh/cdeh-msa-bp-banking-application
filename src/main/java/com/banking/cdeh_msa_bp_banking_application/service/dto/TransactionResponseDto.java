@@ -16,7 +16,9 @@ import java.util.UUID;
 public class TransactionResponseDto {
     private UUID transactionId;
     private UUID customerId;
+    private String customerName;
     private String sourceAccount;
+    private String accountType;
     private BigDecimal initialBalance;
     private BigDecimal amount;
     private BigDecimal availableBalance;

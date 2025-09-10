@@ -1,5 +1,6 @@
 package com.banking.cdeh_msa_bp_banking_application.helper;
 
+import com.banking.cdeh_msa_bp_banking_application.service.dto.AccountRequestDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionCreateRequestDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionUpdateRequestDto;
 import reactor.core.publisher.Mono;
@@ -114,5 +115,22 @@ public class ValidationHelper {
 
     public static Mono<Void> validateAccountNumber(String accountNumber) {
         return validateStringNotEmpty(accountNumber, "Account number");
+    }
+
+    /**
+     * Validates AccountRequestDto
+     */
+    public static Mono<Void> validateAccountRequest(AccountRequestDto accountRequestDto) {
+        return Mono.fromRunnable(() -> {
+            if (accountRequestDto == null) {
+                throw new IllegalArgumentException("Account request cannot be null");
+            }
+            if (accountRequestDto.getCustomerId() == null) {
+                throw new IllegalArgumentException("Customer ID is required");
+            }
+            if (accountRequestDto.getAccountType() == null || accountRequestDto.getAccountType().trim().isEmpty()) {
+                throw new IllegalArgumentException("Account type is required");
+            }
+        });
     }
 }

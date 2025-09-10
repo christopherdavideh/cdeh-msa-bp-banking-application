@@ -4,7 +4,9 @@ import com.banking.cdeh_msa_bp_banking_application.configuration.ApplicationProp
 import com.banking.cdeh_msa_bp_banking_application.repository.AccountRepository;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.AccountRequestDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.AccountResponseDto;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Repository;
@@ -19,10 +21,11 @@ import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class AccountRepositoryImpl implements AccountRepository {
 
-    private final WebClient webClient;
-    private final ApplicationProperties applicationProperties;
+    WebClient webClient;
+    ApplicationProperties applicationProperties;
 
     @Override
     public Mono<AccountResponseDto> createAccount(AccountRequestDto accountRequestDto) {
