@@ -7,14 +7,13 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Builder
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ErrorResponseDto {
     private LocalDateTime timestamp;
-    private int status;
+    private Integer status;
     private String error;
     private String message;
 }
-

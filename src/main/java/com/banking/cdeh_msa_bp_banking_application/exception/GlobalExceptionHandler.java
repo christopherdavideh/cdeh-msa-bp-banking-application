@@ -1,6 +1,6 @@
 package com.banking.cdeh_msa_bp_banking_application.exception;
 
-import com.banking.cdeh_msa_dm_account_transaction.service.dto.ErrorResponseDto;
+import com.banking.cdeh_msa_bp_banking_application.service.dto.ErrorResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,6 +25,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadRequestException.class)
     public Mono<ResponseEntity<ErrorResponseDto>> handleBadRequestException(BadRequestException ex) {
+        ErrorResponseDto errorResponseDto = ErrorResponseDto.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message(ex.getMessage())
+                .build();
+        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public Mono<ResponseEntity<ErrorResponseDto>> handleIllegalArgumentException(IllegalArgumentException ex) {
         ErrorResponseDto errorResponseDto = ErrorResponseDto.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
