@@ -15,6 +15,6 @@ public interface AccountService {
     Flux<AccountResponseDto> getAllAccounts();
     Flux<AccountResponseDto> getAccountsByCustomerId(UUID customerId);
     Mono<AccountResponseDto> updateAccount(UUID accountId, AccountRequestDto accountRequestDto);
-    Mono<AccountResponseDto> updateAccountBalance(UUID accountId, BigDecimal balance);
+    Mono<AccountResponseDto> updateAccountBalance(String accountNumber, BigDecimal balance);
     Mono<Void> deleteAccount(UUID accountId);
 }

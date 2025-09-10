@@ -113,18 +113,18 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Mono<AccountResponseDto> updateAccountBalance(UUID accountId, BigDecimal balance) {
-        return ValidationHelper.validateAccountId(accountId)
+    public Mono<AccountResponseDto> updateAccountBalance(String accountNumber, BigDecimal balance) {
+        return ValidationHelper.validateAccountNumber(accountNumber)
                 .then(ValidationHelper.validateAmountNotNegative(balance))
-                .then(accountRepository.updateAccountBalance(accountId, balance))
+                .then(accountRepository.updateAccountBalance(accountNumber, balance))
                 .flatMap(this::mapCustomerName)
-                .doFirst(() -> log.info(LogMessages.ACCOUNT_UPDATE_BALANCE_START, accountId, balance))
+                .doFirst(() -> log.info(LogMessages.ACCOUNT_UPDATE_BALANCE_START, accountNumber, balance))
                 .doOnSuccess(response -> log.info(LogMessages.ACCOUNT_UPDATE_BALANCE_SUCCESS, response.getAccountId()))
-                .doOnError(error -> log.error(LogMessages.ACCOUNT_UPDATE_BALANCE_ERROR, accountId, error.getMessage()))
+                .doOnError(error -> log.error(LogMessages.ACCOUNT_UPDATE_BALANCE_ERROR, accountNumber, error.getMessage()))
                 .onErrorResume(IllegalArgumentException.class,
                         ex -> Mono.error(new BadRequestException(ex.getMessage())))
                 .onErrorResume(WebClientResponseException.NotFound.class,
-                        ex -> Mono.error(new ResourceNotFoundException("Account not found with ID: " + accountId)))
+                        ex -> Mono.error(new ResourceNotFoundException("Account not found with ID: " + accountNumber)))
                 .onErrorResume(WebClientResponseException.BadRequest.class,
                         ex -> Mono.error(new BadRequestException("Invalid balance value")));
     }

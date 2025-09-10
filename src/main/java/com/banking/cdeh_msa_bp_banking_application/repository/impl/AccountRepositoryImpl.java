@@ -82,11 +82,11 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
-    public Mono<AccountResponseDto> updateAccountBalance(UUID accountId, BigDecimal balance) {
+    public Mono<AccountResponseDto> updateAccountBalance(String accountNumber, BigDecimal balance) {
         Map<String, BigDecimal> balanceUpdate = Map.of("initialBalance", balance);
 
         return webClient.patch()
-                .uri(applicationProperties.getUrl().getAccountService().getFullUrl() + "/{accountId}/balance", accountId)
+                .uri(applicationProperties.getUrl().getAccountService().getFullUrl() + "/{accountNumber}/balance", accountNumber)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(balanceUpdate)
                 .retrieve()

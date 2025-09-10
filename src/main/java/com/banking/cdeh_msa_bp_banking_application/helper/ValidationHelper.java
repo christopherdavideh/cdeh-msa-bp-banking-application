@@ -117,9 +117,7 @@ public class ValidationHelper {
         return validateStringNotEmpty(accountNumber, "Account number");
     }
 
-    /**
-     * Validates AccountRequestDto
-     */
+
     public static Mono<Void> validateAccountRequest(AccountRequestDto accountRequestDto) {
         return Mono.fromRunnable(() -> {
             if (accountRequestDto == null) {
