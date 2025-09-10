@@ -6,8 +6,14 @@ Este microservicio actúa como orquestador para coordinar las operaciones entre 
 - **Account Service** (puerto 8081): Gestión de cuentas
 - **Transaction Service** (puerto 8082): Gestión de transacciones
 
+Se ejecuta en el puerto **8083** y expone APIs REST para que el frontend pueda consumir todas las funcionalidades de manera centralizada.
+
 ## Arquitectura
-El microservicio orquestador se ejecuta en el puerto **8083** y expone APIs REST para que el frontend pueda consumir todas las funcionalidades de manera centralizada.
+Para más detalles sobre la arquitectura, puedes consultar: [Arquitectura del Sistema](https://s.icepanel.io/K5d5PzFi75vnuy/oIyI)
+
+![Diagrama de Arquitectura](src/main/resources/architecture.png)
+
+
 
 ## Endpoints Disponibles
 
@@ -41,10 +47,35 @@ El microservicio está configurado para conectarse a los siguientes servicios:
 ```yaml
 application:
   url:
-    party-service: http://localhost:8080
+    party-service: http://localhost:8080 
     account-service: http://localhost:8081
     transaction-service: http://localhost:8082
 ```
+Urls de los microservicios asociados:
+- [Party Service](https://github.com/christopherdavideh/cdeh-msa-dm-prdd-party)
+- [Account Service](https://github.com/christopherdavideh/cdeh-msa-dm-account)
+- [Transaction Service](https://github.com/christopherdavideh/cdeh-msa-bp-banking-application)
+
+## Estructura del Proyecto
+```
+src/main/java/com/banking/cdeh_msa_bp_banking_application/
+├── configuration/          # Configuración de la aplicación
+├── controller/             # Controladores REST
+├── repository/             # Interfaces de repositorio
+│   └── impl/              # Implementaciones de repositorio
+├── service/               # Interfaces de servicio
+│   ├── dto/              # DTOs para transferencia de datos
+│   └── impl/             # Implementaciones de servicio
+└── CdehMsaBpBankingApplication.java
+```
+
+## Características Técnicas
+- **Framework**: Spring Boot 3.x con WebFlux
+- **Programación Reactiva**: Uso de Mono y Flux
+- **Cliente HTTP**: WebClient para comunicación entre microservicios
+- **Logging**: SLF4J para trazabilidad completa
+- **Validación**: Bean Validation para validación de entrada
+- **Manejo de Errores**: Manejo robusto de errores con logging detallado
 
 ## Ejemplos de Uso
 
@@ -89,45 +120,3 @@ curl -X POST http://localhost:8083/api/v1/transactions \
     "availableBalance": 850.00
   }'
 ```
-
-## Principios Aplicados
-- **Single Responsibility Principle**: Cada clase tiene una responsabilidad específica
-- **Open/Closed Principle**: El código está abierto para extensión pero cerrado para modificación
-- **Dependency Inversion Principle**: Las dependencias se inyectan mediante interfaces
-- **Clean Code**: Código limpio, legible y bien documentado
-- **Reactive Programming**: Uso de WebFlux para operaciones no bloqueantes
-
-## Estructura del Proyecto
-```
-src/main/java/com/banking/cdeh_msa_bp_banking_application/
-├── configuration/          # Configuración de la aplicación
-├── controller/             # Controladores REST
-├── repository/             # Interfaces de repositorio
-│   └── impl/              # Implementaciones de repositorio
-├── service/               # Interfaces de servicio
-│   ├── dto/              # DTOs para transferencia de datos
-│   └── impl/             # Implementaciones de servicio
-└── CdehMsaBpBankingApplication.java
-```
-
-## Características Técnicas
-- **Framework**: Spring Boot 3.x con WebFlux
-- **Programación Reactiva**: Uso de Mono y Flux
-- **Cliente HTTP**: WebClient para comunicación entre microservicios
-- **Logging**: SLF4J para trazabilidad completa
-- **Validación**: Bean Validation para validación de entrada
-- **Manejo de Errores**: Manejo robusto de errores con logging detallado
-
-## Ejecución
-1. Asegúrate de que los tres microservicios de dominio estén ejecutándose
-2. Ejecuta este microservicio orquestador:
-   ```bash
-   ./gradlew bootRun
-   ```
-3. El servicio estará disponible en http://localhost:8083
-
-## Monitoreo
-El servicio incluye endpoints de actuator para monitoreo:
-- Health: http://localhost:8083/actuator/health
-- Info: http://localhost:8083/actuator/info
-- Metrics: http://localhost:8083/actuator/metrics
