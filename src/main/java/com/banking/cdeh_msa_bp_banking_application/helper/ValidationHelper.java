@@ -131,4 +131,31 @@ public class ValidationHelper {
             }
         });
     }
+
+
+    public static Mono<Void> validateDebitTransaction(BigDecimal amount, BigDecimal initialBalance) {
+        return Mono.fromRunnable(() -> {
+            if (amount == null) {
+                throw new IllegalArgumentException("Amount cannot be null");
+            }
+            if (initialBalance == null) {
+                throw new IllegalArgumentException("Initial balance cannot be null");
+            }
+
+            // Si es un débito (amount negativo), validar que el valor absoluto no exceda el balance inicial
+            if (amount.compareTo(BigDecimal.ZERO) < 0) {
+                BigDecimal absoluteAmount = amount.abs();
+                if (absoluteAmount.compareTo(initialBalance) > 0) {
+                    throw new IllegalArgumentException("Insufficient balance. Available: " + initialBalance + ", Required: " + absoluteAmount);
+                }
+            }
+        });
+    }
+
+    public static BigDecimal calculateAvailableBalance(BigDecimal initialBalance, BigDecimal amount) {
+        if (initialBalance == null || amount == null) {
+            throw new IllegalArgumentException("Initial balance and amount cannot be null");
+        }
+        return initialBalance.add(amount);
+    }
 }

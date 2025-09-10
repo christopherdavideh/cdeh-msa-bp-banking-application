@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/movimientos")
+@RequestMapping("/api/movimientos")
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class TransactionController {
@@ -53,7 +53,7 @@ public class TransactionController {
                 .then(Mono.just(ResponseEntity.noContent().<Void>build()));
     }
 
-    @GetMapping("/customer/{customerId}/account/{accountNumber}")
+    @GetMapping("/cliente/{customerId}/numero/{accountNumber}")
     public Mono<ResponseEntity<Flux<TransactionResponseDto>>> getTransactionsByCustomerAndAccount(
             @PathVariable UUID customerId,
             @PathVariable String accountNumber,

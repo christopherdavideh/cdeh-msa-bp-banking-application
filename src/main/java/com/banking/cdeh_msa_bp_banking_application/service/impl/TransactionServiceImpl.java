@@ -6,6 +6,7 @@ import com.banking.cdeh_msa_bp_banking_application.helper.ValidationHelper;
 import com.banking.cdeh_msa_bp_banking_application.repository.AccountRepository;
 import com.banking.cdeh_msa_bp_banking_application.repository.CustomerRepository;
 import com.banking.cdeh_msa_bp_banking_application.repository.TransactionRepository;
+import com.banking.cdeh_msa_bp_banking_application.service.AccountService;
 import com.banking.cdeh_msa_bp_banking_application.service.TransactionService;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.AccountResponseDto;
 import com.banking.cdeh_msa_bp_banking_application.service.dto.TransactionCreateRequestDto;
@@ -21,6 +22,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -33,11 +35,19 @@ public class TransactionServiceImpl implements TransactionService {
     TransactionRepository transactionRepository;
     CustomerRepository customerRepository;
     AccountRepository accountRepository;
+    AccountService accountService;
 
     @Override
     public Mono<TransactionResponseDto> createTransaction(TransactionCreateRequestDto transactionCreateRequestDto) {
         return ValidationHelper.validateTransactionCreateRequest(transactionCreateRequestDto)
-                .then(transactionRepository.createTransaction(transactionCreateRequestDto))
+                .then(getAccountBalanceAndValidateTransaction(transactionCreateRequestDto))
+                .flatMap(requestWithCalculatedBalance ->
+                        transactionRepository.createTransaction(requestWithCalculatedBalance)
+                                .flatMap(transactionResponse ->
+                                        updateAccountBalance(requestWithCalculatedBalance)
+                                                .then(Mono.just(transactionResponse))
+                                )
+                )
                 .flatMap(this::mapAdditionalData)
                 .doFirst(() -> log.info(LogMessages.TRANSACTION_CREATE_START,
                         transactionCreateRequestDto.getCustomerId(),
@@ -51,6 +61,40 @@ public class TransactionServiceImpl implements TransactionService {
                         ex -> Mono.error(new BadRequestException("Invalid transaction data")))
                 .onErrorResume(WebClientResponseException.Conflict.class,
                         ex -> Mono.error(new BadRequestException("Transaction already exists")));
+    }
+
+    private Mono<TransactionCreateRequestDto> getAccountBalanceAndValidateTransaction(TransactionCreateRequestDto request) {
+        return accountService.getAccountByNumber(request.getSourceAccount())
+                .map(AccountResponseDto::getInitialBalance)
+                .flatMap(initialBalance -> validateAndCalculateTransaction(request, initialBalance))
+                .doOnNext(enrichedRequest -> log.debug("Account balance obtained: {} for account: {}",
+                        enrichedRequest.getInitialBalance(), request.getSourceAccount()));
+    }
+
+    private Mono<TransactionCreateRequestDto> validateAndCalculateTransaction(TransactionCreateRequestDto request, BigDecimal initialBalance) {
+        return ValidationHelper.validateDebitTransaction(request.getAmount(), initialBalance)
+                .then(Mono.fromCallable(() -> {
+                    BigDecimal availableBalance = ValidationHelper.calculateAvailableBalance(
+                            initialBalance,
+                            request.getAmount()
+                    );
+                    return TransactionCreateRequestDto.builder()
+                            .customerId(request.getCustomerId())
+                            .sourceAccount(request.getSourceAccount())
+                            .initialBalance(initialBalance)
+                            .amount(request.getAmount())
+                            .availableBalance(availableBalance)
+                            .build();
+                }));
+    }
+
+    private Mono<Void> updateAccountBalance(TransactionCreateRequestDto request) {
+        return accountService.updateAccountBalance(request.getSourceAccount(), request.getAvailableBalance())
+                .then()
+                .doOnSuccess(unused -> log.debug("Account balance updated successfully for account: {}",
+                        request.getSourceAccount()))
+                .doOnError(error -> log.error("Failed to update account balance for account: {} - Error: {}",
+                        request.getSourceAccount(), error.getMessage()));
     }
 
     @Override

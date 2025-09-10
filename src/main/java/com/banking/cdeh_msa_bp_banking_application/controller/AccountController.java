@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/cuentas")
+@RequestMapping("/api/cuentas")
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class AccountController {
@@ -37,7 +37,7 @@ public class AccountController {
                 .map(ResponseEntity::ok);
     }
 
-    @GetMapping("/number/{accountNumber}")
+    @GetMapping("/numero/{accountNumber}")
     public Mono<ResponseEntity<AccountResponseDto>> getAccountByNumber(@PathVariable String accountNumber) {
         return accountService.getAccountByNumber(accountNumber)
                 .map(ResponseEntity::ok);
@@ -48,7 +48,7 @@ public class AccountController {
         return Mono.just(ResponseEntity.ok(accountService.getAllAccounts()));
     }
 
-    @GetMapping("/customer/{customerId}")
+    @GetMapping("/cliente/{customerId}")
     public Mono<ResponseEntity<Flux<AccountResponseDto>>> getAccountsByCustomerId(@PathVariable UUID customerId) {
         return Mono.just(ResponseEntity.ok(accountService.getAccountsByCustomerId(customerId)));
     }
