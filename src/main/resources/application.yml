@@ -5,6 +5,26 @@ spring:
   application:
     name: cdeh-msa-bp-banking-application
 
+# Configuración CORS
+cors:
+  allowed-origins:
+    - "http://localhost:4200"
+    - "http://localhost:4201"
+    - "http://localhost:3000"
+    - "http://127.0.0.1:4200"
+    - "http://127.0.0.1:4201"
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - PATCH
+    - OPTIONS
+  allowed-headers:
+    - "*"
+  allow-credentials: true
+  max-age: 3600
+
 application:
   connect-timeout: 5000
   read-timeout: 30000
