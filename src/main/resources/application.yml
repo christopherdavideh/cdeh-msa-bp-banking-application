@@ -1,0 +1,35 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: cdeh-msa-bp-banking-application
+
+application:
+  connect-timeout: 5000
+  read-timeout: 30000
+  max-in-memory-size: 1048576
+  url:
+    party-service:
+      base-url: http://localhost:8080
+      path: /api/v1/clientes
+    account-service:
+      base-url: http://localhost:8081
+      path: /cuentas
+    transaction-service:
+      base-url: http://localhost:8082
+      path: /movimientos
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.banking: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
