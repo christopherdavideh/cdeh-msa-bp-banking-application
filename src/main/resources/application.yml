@@ -12,7 +12,7 @@ application:
   url:
     party-service:
       base-url: http://localhost:8080
-      path: /api/clientes
+      path: /clientes
     account-service:
       base-url: http://localhost:8081
       path: /cuentas
