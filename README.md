@@ -54,7 +54,7 @@ application:
 Urls de los microservicios asociados:
 - [Party Service](https://github.com/christopherdavideh/cdeh-msa-dm-prdd-party)
 - [Account Service](https://github.com/christopherdavideh/cdeh-msa-dm-account)
-- [Transaction Service](https://github.com/christopherdavideh/cdeh-msa-bp-banking-application)
+- [Transaction Service](https://github.com/christopherdavideh/cdeh-msa-dm-account-transaction)
 
 ## Estructura del Proyecto
 ```
